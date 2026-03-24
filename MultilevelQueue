@@ -1,75 +1,148 @@
 #include <stdio.h>
+#include <string.h>
 
-#define MAX 50
+#define MAX 100
 
 typedef struct {
     int pid;
     int arrival;
     int burst;
-    int waiting;
-    int turnaround;
+    int remaining;
+    char type[10];
 } Process;
 
-void fcfs(Process p[], int n, int start_time) {
-    int time = start_time;
+typedef struct {
+    int items[MAX];
+    int front, rear;
+} Queue;
 
-    for (int i = 0; i < n; i++) {
-        if (time < p[i].arrival)
-            time = p[i].arrival;
+void initQueue(Queue *q) {
+    q->front = q->rear = -1;
+}
 
-        p[i].waiting = time - p[i].arrival;
-        time += p[i].burst;
-        p[i].turnaround = p[i].waiting + p[i].burst;
-    }
+int isEmpty(Queue *q) {
+    return q->front == -1;
+}
 
-    printf("\nPID\tArrival\tBurst\tWaiting\tTurnaround\n");
-    for (int i = 0; i < n; i++) {
-        printf("%d\t%d\t%d\t%d\t%d\n",
-               p[i].pid, p[i].arrival, p[i].burst,
-               p[i].waiting, p[i].turnaround);
-    }
+void enqueue(Queue *q, int value) {
+    if (q->rear == MAX - 1) return;
+    if (q->front == -1) q->front = 0;
+    q->items[++q->rear] = value;
+}
+
+int dequeue(Queue *q) {
+    if (isEmpty(q)) return -1;
+    int val = q->items[q->front];
+    if (q->front == q->rear)
+        q->front = q->rear = -1;
+    else
+        q->front++;
+    return val;
 }
 
 int main() {
-    Process system[MAX], user[MAX];
-    int n_sys, n_user;
+    Process p[MAX];
+    int n;
 
-    printf("Enter number of SYSTEM processes: ");
-    scanf("%d", &n_sys);
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
 
-    for (int i = 0; i < n_sys; i++) {
-        printf("\nSystem Process %d\n", i + 1);
-        system[i].pid = i + 1;
+    for (int i = 0; i < n; i++) {
+        printf("\nProcess %d\n", i + 1);
+        p[i].pid = i + 1;
+
         printf("Arrival Time: ");
-        scanf("%d", &system[i].arrival);
+        scanf("%d", &p[i].arrival);
+
         printf("Burst Time: ");
-        scanf("%d", &system[i].burst);
+        scanf("%d", &p[i].burst);
+
+        printf("Type (system/user): ");
+        scanf("%s", p[i].type);
+
+        p[i].remaining = p[i].burst;
     }
 
-    printf("\nEnter number of USER processes: ");
-    scanf("%d", &n_user);
-
-    for (int i = 0; i < n_user; i++) {
-        printf("\nUser Process %d\n", i + 1);
-        user[i].pid = i + 1;
-        printf("Arrival Time: ");
-        scanf("%d", &user[i].arrival);
-        printf("Burst Time: ");
-        scanf("%d", &user[i].burst);
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (p[i].arrival > p[j].arrival) {
+                Process temp = p[i];
+                p[i] = p[j];
+                p[j] = temp;
+            }
+        }
     }
 
-    printf("\n--- SYSTEM PROCESS QUEUE (Higher Priority) ---\n");
-    fcfs(system, n_sys, 0);
+    Queue systemQueue, userQueue;
+    initQueue(&systemQueue);
+    initQueue(&userQueue);
 
-    int time = 0;
-    for (int i = 0; i < n_sys; i++) {
-        if (time < system[i].arrival)
-            time = system[i].arrival;
-        time += system[i].burst;
+    int current_time = 0, completed = 0, i = 0;
+    int current_process = -1;
+
+    int gantt[MAX], gtime[MAX];
+    int gindex = 0;
+
+    while (completed < n) {
+
+        while (i < n && p[i].arrival <= current_time) {
+            if (strcmp(p[i].type, "system") == 0)
+                enqueue(&systemQueue, i);
+            else
+                enqueue(&userQueue, i);
+            i++;
+        }
+
+        if (current_process != -1) {
+            if (strcmp(p[current_process].type, "user") == 0 &&
+                !isEmpty(&systemQueue)) {
+                enqueue(&userQueue, current_process);
+                current_process = -1;
+            }
+        }
+        if (current_process == -1) {
+            if (!isEmpty(&systemQueue))
+                current_process = dequeue(&systemQueue);
+            else if (!isEmpty(&userQueue))
+                current_process = dequeue(&userQueue);
+            else {
+                current_time++;
+                continue;
+            }
+        }
+        gantt[gindex] = p[current_process].pid;
+        gtime[gindex] = current_time;
+        gindex++;
+        p[current_process].remaining--;
+        current_time++;
+
+        if (p[current_process].remaining == 0) {
+            printf("Process P%d completed at time %d\n",
+                   p[current_process].pid, current_time);
+            completed++;
+            current_process = -1;
+        }
     }
 
-    printf("\n--- USER PROCESS QUEUE (Lower Priority) ---\n");
-    fcfs(user, n_user, time);
+    printf("\nGantt Chart:\n");
+
+    printf(" ");
+    for (int k = 0; k < gindex; k++)
+        printf("----");
+    printf("\n|");
+
+    for (int k = 0; k < gindex; k++)
+        printf("P%d |", gantt[k]);
+
+    printf("\n ");
+    for (int k = 0; k < gindex; k++)
+        printf("----");
+
+    printf("\n%d", gtime[0]);
+    for (int k = 1; k < gindex; k++)
+        printf("   %d", gtime[k]);
+
+    printf("   %d\n", current_time);
 
     return 0;
 }
