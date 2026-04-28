@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <unistd.h>
 
 #define BUFFER_SIZE 5
+#define N 15   // number of items
 
 int buffer[BUFFER_SIZE];
 int in = 0, out = 0;
@@ -11,38 +13,44 @@ int in = 0, out = 0;
 sem_t empty, full;
 pthread_mutex_t mutex;
 
-// Producer function
+// Producer
 void* producer(void* arg) {
-    int item;
-    while (1) {
-        item = rand() % 100; // produce item
+    for (int i = 0; i < N; i++) {
 
-        sem_wait(&empty);   // wait if buffer is full
+        sem_wait(&empty);
         pthread_mutex_lock(&mutex);
 
-        buffer[in] = item;
-        printf("Produced: %d at %d\n", item, in);
+        buffer[in] = i;
+        printf("Produced: %d at buffer[%d]\n", i, in);
+
         in = (in + 1) % BUFFER_SIZE;
 
         pthread_mutex_unlock(&mutex);
-        sem_post(&full);    // increase full count
+        sem_post(&full);
+
+        usleep(100000); // small delay for clean output
     }
+    return NULL;
 }
 
-// Consumer function
+// Consumer
 void* consumer(void* arg) {
-    int item;
-    while (1) {
-        sem_wait(&full);    // wait if buffer is empty
+    for (int i = 0; i < N; i++) {
+
+        sem_wait(&full);
         pthread_mutex_lock(&mutex);
 
-        item = buffer[out];
-        printf("Consumed: %d from %d\n", item, out);
+        int item = buffer[out];
+        printf("Consumed: %d from buffer[%d]\n", item, out);
+
         out = (out + 1) % BUFFER_SIZE;
 
         pthread_mutex_unlock(&mutex);
-        sem_post(&empty);   // increase empty count
+        sem_post(&empty);
+
+        usleep(150000); // delay to interleave nicely
     }
+    return NULL;
 }
 
 int main() {
