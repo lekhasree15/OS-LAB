@@ -1,135 +1,111 @@
-
 #include <stdio.h>
 
-#define MAX 100
+struct Process {
+    int pid;
+    int at, bt;
+    int ct, tat, wt;
+};
 
-typedef struct {
-    int id, at, bt, rt, ct, wt, tat, type;
-} Process;
+void sortByAT(struct Process p[], int n) {
+    int i, j;
+    struct Process temp;
 
-Process p[MAX];
-int n;
-
-int sysQ[MAX], userQ[MAX];
-int frontS = 0, rearS = 0;
-int frontU = 0, rearU = 0;
-
-void enqueue(int q[], int *rear, int val) {
-    q[(*rear)++] = val;
-}
-
-int dequeue(int q[], int *front, int *rear) {
-    if (*front == *rear) return -1;
-    return q[(*front)++];
-}
-
-int isEmpty(int front, int rear) {
-    return front == rear;
+    for(i = 0; i < n - 1; i++) {
+        for(j = 0; j < n - i - 1; j++) {
+            if(p[j].at > p[j + 1].at) {
+                temp = p[j];
+                p[j] = p[j + 1];
+                p[j + 1] = temp;
+            }
+        }
+    }
 }
 
 int main() {
-    printf("Enter number of processes: ");
-    scanf("%d", &n);
+    int ns, nu, i;
+    float avgWT = 0, avgTAT = 0;
 
-    for (int i = 0; i < n; i++) {
-        printf("\nProcess %d\n", i);
-        printf("Enter arrival time: ");
-        scanf("%d", &p[i].at);
-        printf("Enter burst time: ");
-        scanf("%d", &p[i].bt);
-        printf("Enter type (0 = System, 1 = User): ");
-        scanf("%d", &p[i].type);
+    printf("Enter number of System Processes: ");
+    scanf("%d", &ns);
 
-        p[i].id = i;
-        p[i].rt = p[i].bt;
+    struct Process sys[ns];
+
+    printf("\nEnter Arrival Time and Burst Time for System Processes:\n");
+    for(i = 0; i < ns; i++) {
+        sys[i].pid = i + 1;
+        printf("P%d AT BT: ", sys[i].pid);
+        scanf("%d%d", &sys[i].at, &sys[i].bt);
     }
 
-    for (int i = 0; i < n - 1; i++) {
-        for (int j = i + 1; j < n; j++) {
-            if (p[i].at > p[j].at) {
-                Process temp = p[i];
-                p[i] = p[j];
-                p[j] = temp;
-            }
-        }
+    printf("\nEnter number of User Processes: ");
+    scanf("%d", &nu);
+
+    struct Process user[nu];
+
+    printf("\nEnter Arrival Time and Burst Time for User Processes:\n");
+    for(i = 0; i < nu; i++) {
+        user[i].pid = i + 1;
+        printf("U%d AT BT: ", user[i].pid);
+        scanf("%d%d", &user[i].at, &user[i].bt);
     }
 
-    int time = 0, completed = 0, i = 0;
-    int current = -1;
+    sortByAT(sys, ns);
+    sortByAT(user, nu);
 
-    int gantt[MAX], gtime[MAX], gindex = 0;
+    int time = 0;
 
-    while (completed < n) {
+    /* System Queue First */
+    for(i = 0; i < ns; i++) {
+        if(time < sys[i].at)
+            time = sys[i].at;
 
-        while (i < n && p[i].at <= time) {
-            if (p[i].type == 0)
-                enqueue(sysQ, &rearS, i);
-            else
-                enqueue(userQ, &rearU, i);
-            i++;
-        }
+        time += sys[i].bt;
 
-        if (current != -1 && p[current].type == 1 && !isEmpty(frontS, rearS)) {
-            enqueue(userQ, &rearU, current);
-            current = -1;
-        }
+        sys[i].ct = time;
+        sys[i].tat = sys[i].ct - sys[i].at;
+        sys[i].wt = sys[i].tat - sys[i].bt;
 
-        if (current == -1) {
-            if (!isEmpty(frontS, rearS))
-                current = dequeue(sysQ, &frontS, &rearS);
-            else if (!isEmpty(frontU, rearU))
-                current = dequeue(userQ, &frontU, &rearU);
-            else {
-                time++;
-                continue;
-            }
-        }
-
-        gantt[gindex] = p[current].id;
-        gtime[gindex] = time;
-        gindex++;
-
-        p[current].rt--;
-        time++;
-
-        if (p[current].rt == 0) {
-            p[current].ct = time;
-            p[current].tat = p[current].ct - p[current].at;
-            p[current].wt = p[current].tat - p[current].bt;
-            completed++;
-            current = -1;
-        }
+        avgWT += sys[i].wt;
+        avgTAT += sys[i].tat;
     }
 
-    gtime[gindex] = time;
+    /* User Queue Next */
+    for(i = 0; i < nu; i++) {
+        if(time < user[i].at)
+            time = user[i].at;
 
-    printf("\nGantt Chart:\n|");
-    for (int i = 0; i < gindex; i++) {
-        printf(" P%d |", gantt[i]);
+        time += user[i].bt;
+
+        user[i].ct = time;
+        user[i].tat = user[i].ct - user[i].at;
+        user[i].wt = user[i].tat - user[i].bt;
+
+        avgWT += user[i].wt;
+        avgTAT += user[i].tat;
     }
 
-    printf("\n0");
-    for (int i = 0; i < gindex; i++) {
-        printf("   %d", gtime[i+1]);
+    printf("\nSYSTEM QUEUE (FCFS)\n");
+    printf("PID\tAT\tBT\tCT\tTAT\tWT\n");
+
+    for(i = 0; i < ns; i++) {
+        printf("P%d\t%d\t%d\t%d\t%d\t%d\n",
+               sys[i].pid, sys[i].at, sys[i].bt,
+               sys[i].ct, sys[i].tat, sys[i].wt);
     }
 
-    float totalWT = 0, totalTAT = 0;
+    printf("\nUSER QUEUE (FCFS)\n");
+    printf("PID\tAT\tBT\tCT\tTAT\tWT\n");
 
-    printf("\n\nID\tType\tAT\tBT\tCT\tWT\tTAT\n");
-    for (int i = 0; i < n; i++) {
-        printf("%d\t%s\t%d\t%d\t%d\t%d\t%d\n",
-               p[i].id,
-               (p[i].type == 0) ? "System" : "User",
-               p[i].at, p[i].bt,
-               p[i].ct, p[i].wt, p[i].tat);
-
-        totalWT += p[i].wt;
-        totalTAT += p[i].tat;
+    for(i = 0; i < nu; i++) {
+        printf("U%d\t%d\t%d\t%d\t%d\t%d\n",
+               user[i].pid, user[i].at, user[i].bt,
+               user[i].ct, user[i].tat, user[i].wt);
     }
 
-    printf("\nAverage Waiting Time: %.2f", totalWT / n);
-    printf("\nAverage Turnaround Time: %.2f\n", totalTAT / n);
+    int total = ns + nu;
+
+    printf("\nAverage Turnaround Time = %.2f", avgTAT / total);
+    printf("\nAverage Waiting Time = %.2f\n", avgWT / total);
 
     return 0;
 }
-
