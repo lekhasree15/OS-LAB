@@ -1,57 +1,36 @@
-#include <stdio.h>
-#include <pthread.h>
-#include <semaphore.h>
-#include <unistd.h>
-
+#include<stdio.h>
 #define N 5
+int chopstick[N] = {1, 1, 1, 1, 1};
+int room = N - 1;
 
-sem_t chopstick[N];
-sem_t room;
-
-// Philosopher
-void* philosopher(void* num) {
-    int i = *(int*)num;
-
-    while (1) {
-        printf("Philosopher %d is thinking.\n", i);
-        sleep(1);
-
-        sem_wait(&room);
-
-        printf("Philosopher %d picked up left fork %d.\n", i, i);
-        sem_wait(&chopstick[i]);
-
-        printf("Philosopher %d picked up right fork %d.\n", i, (i+1)%N);
-        sem_wait(&chopstick[(i+1)%N]);
-
-        printf("Philosopher %d is eating.\n", i);
-        sleep(2);
-
-        printf("Philosopher %d put down forks %d and %d.\n", i, i, (i+1)%N);
-
-        sem_post(&chopstick[i]);
-        sem_post(&chopstick[(i+1)%N]);
-
-        sem_post(&room);
-    }
+void wait(int *s){
+  (*s)--;
 }
 
-int main() {
-    pthread_t phil[N];
-    int id[N];
+void signal(int *s){
+  (*s)++;
+}
 
-    sem_init(&room, 0, 4);
+void philosopher(int i){
+  printf("Phillosopher %d is thinking\n", i);
+  wait(&room);
+  wait(&chopstick[i]);
+  printf("Philosopher %d picked up left fork %d\n", i, i);
+  wait(&chopstick[(i+1)%N]);
+  printf("Philosopher %d picked up right fork %d\n",i, (i+1)%N);
+  printf("Philosopher %d is eating\n", i);
+  signal(&chopstick[i]);
+  signal(&chopstick[(i+1)%N]);
+  signal(&room);
+  printf("Philosopher %d is thinking.\n", i);
 
-    for (int i = 0; i < N; i++)
-        sem_init(&chopstick[i], 0, 1);
+}
 
-    for (int i = 0; i < N; i++) {
-        id[i] = i;
-        pthread_create(&phil[i], NULL, philosopher, &id[i]);
-    }
-
-    for (int i = 0; i < N; i++)
-        pthread_join(phil[i], NULL);
-
-    return 0;
+int main(){
+  int i;
+  for(int i = 0; i < N; i++){
+    philosopher(i);
+    printf("\n");
+  }
+  return 0;
 }
