@@ -1,70 +1,66 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <semaphore.h>
-#include <unistd.h>
+#include<stdio.h>
+#include<stdlib.h>
 
 #define BUFFER_SIZE 5
-#define N 15   // number of items
 
 int buffer[BUFFER_SIZE];
 int in = 0, out = 0;
 
-sem_t empty, full;
-pthread_mutex_t mutex;
+int mutex = 1;
+int full = 0;
+int empty = BUFFER_SIZE;
 
-// Producer
-void* producer(void* arg) {
-    for (int i = 0; i < N; i++) {
-
-        sem_wait(&empty);
-        pthread_mutex_lock(&mutex);
-
-        buffer[in] = i;
-        printf("Produced: %d at buffer[%d]\n", i, in);
-
-        in = (in + 1) % BUFFER_SIZE;
-
-        pthread_mutex_unlock(&mutex);
-        sem_post(&full);
-
-        usleep(100000); // small delay for clean output
-    }
-    return NULL;
+void wait(int *s){
+  (*s)--;
 }
 
-// Consumer
-void* consumer(void* arg) {
-    for (int i = 0; i < N; i++) {
-
-        sem_wait(&full);
-        pthread_mutex_lock(&mutex);
-
-        int item = buffer[out];
-        printf("Consumed: %d from buffer[%d]\n", item, out);
-
-        out = (out + 1) % BUFFER_SIZE;
-
-        pthread_mutex_unlock(&mutex);
-        sem_post(&empty);
-
-        usleep(150000); // delay to interleave nicely
-    }
-    return NULL;
+int signal(int *s){
+  return (*s)++;
 }
 
-int main() {
-    pthread_t p, c;
+void producer(int item){
+  if(empty == 0){
+    printf("Buffer is full\n");
+    return;
+  }
+  wait(&empty);
+  wait(&mutex);
 
-    sem_init(&empty, 0, BUFFER_SIZE);
-    sem_init(&full, 0, 0);
-    pthread_mutex_init(&mutex, NULL);
+  buffer[in] = item;
+  printf("Produced: %d at buffer[%d]\n", item, in);
+  in = (in + 1) % BUFFER_SIZE;
 
-    pthread_create(&p, NULL, producer, NULL);
-    pthread_create(&c, NULL, consumer, NULL);
+  signal(&mutex);
+  signal(&full);
 
-    pthread_join(p, NULL);
-    pthread_join(c, NULL);
+}
 
-    return 0;
+void consumer(){
+  int item;
+  if(full == 0){
+    printf("Buffer is empty\n");
+    return;
+  }
+
+  wait(&full);
+  wait(&mutex);
+
+  item = buffer[out];
+  printf("Consumed: %d from buffer[%d]\n", item, out);
+  out = (out + 1) % BUFFER_SIZE;
+
+  signal(&mutex);
+  signal(&empty);
+}
+
+
+int main(){
+  int item = 0;
+  for(int i = 0; i < 15; i++){
+    producer(item++);
+    if(i % 2 == 0){
+      consumer();
+    }
+  }
+  return 0;
 }
