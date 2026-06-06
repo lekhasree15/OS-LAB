@@ -15,7 +15,7 @@ void firstFit(int blockSize[], int blocks, int processSize[], int processes)
         {
             if(!used[j] && blockSize[j] >= processSize[i])
             {
-                allocation[i] = j;
+                allocation[i] = blockSize[j];
                 used[j] = 1;
                 break;
             }
@@ -23,14 +23,14 @@ void firstFit(int blockSize[], int blocks, int processSize[], int processes)
     }
 
     printf("\nFIRST FIT ALLOCATION\n");
-    printf("Process No\tProcess Size\tBlock No\n");
+    printf("Process No\tProcess Size\tBlock Size\n");
 
     for(i = 0; i < processes; i++)
     {
         printf("%d\t\t%d\t\t", i+1, processSize[i]);
 
         if(allocation[i] != -1)
-            printf("%d\n", allocation[i]+1);
+            printf("%d\n", allocation[i]);
         else
             printf("Not Allocated\n");
     }
@@ -60,20 +60,20 @@ void bestFit(int blockSize[], int blocks, int processSize[], int processes)
 
         if(bestIdx != -1)
         {
-            allocation[i] = bestIdx;
+            allocation[i] = blockSize[bestIdx];
             used[bestIdx] = 1;
         }
     }
 
     printf("\nBEST FIT ALLOCATION\n");
-    printf("Process No\tProcess Size\tBlock No\n");
+    printf("Process No\tProcess Size\tBlock Size\n");
 
     for(i = 0; i < processes; i++)
     {
         printf("%d\t\t%d\t\t", i+1, processSize[i]);
 
         if(allocation[i] != -1)
-            printf("%d\n", allocation[i]+1);
+            printf("%d\n", allocation[i]);
         else
             printf("Not Allocated\n");
     }
@@ -103,20 +103,20 @@ void worstFit(int blockSize[], int blocks, int processSize[], int processes)
 
         if(worstIdx != -1)
         {
-            allocation[i] = worstIdx;
+            allocation[i] = blockSize[worstIdx];
             used[worstIdx] = 1;
         }
     }
 
     printf("\nWORST FIT ALLOCATION\n");
-    printf("Process No\tProcess Size\tBlock No\n");
+    printf("Process No\tProcess Size\tBlock Size\n");
 
     for(i = 0; i < processes; i++)
     {
         printf("%d\t\t%d\t\t", i+1, processSize[i]);
 
         if(allocation[i] != -1)
-            printf("%d\n", allocation[i]+1);
+            printf("%d\n", allocation[i]);
         else
             printf("Not Allocated\n");
     }
