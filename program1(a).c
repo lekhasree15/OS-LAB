@@ -20,9 +20,9 @@ int main() {
     struct Process p[n], temp;
 
     for(int i = 0; i < n; i++) {
-        printf("\nProcess %d\n", i + 1);
-
         p[i].pid = i + 1;
+
+        printf("\nProcess %d\n", i + 1);
 
         printf("Arrival Time: ");
         scanf("%d", &p[i].at);
@@ -31,10 +31,9 @@ int main() {
         scanf("%d", &p[i].bt);
     }
 
-    // Sort processes based on Arrival Time
+    // Sort according to Arrival Time
     for(int i = 0; i < n - 1; i++) {
         for(int j = i + 1; j < n; j++) {
-
             if(p[i].at > p[j].at) {
                 temp = p[i];
                 p[i] = p[j];
@@ -45,11 +44,14 @@ int main() {
 
     int time = 0;
 
-    // FCFS Scheduling
+    printf("\nGantt Chart:\n|");
+
     for(int i = 0; i < n; i++) {
 
         if(time < p[i].at)
             time = p[i].at;
+
+        printf(" P%d |", p[i].pid);
 
         p[i].ct = time + p[i].bt;
         p[i].tat = p[i].ct - p[i].at;
@@ -61,36 +63,17 @@ int main() {
         total_tat += p[i].tat;
     }
 
-    // Gantt Chart
-    printf("\nGantt Chart:\n");
+    printf("\n0");
 
-    printf("|");
     for(int i = 0; i < n; i++) {
-        printf(" P%d |", p[i].pid);
+        printf("\t%d", p[i].ct);
     }
 
     printf("\n");
 
-    int current = 0;
-    printf("%d", current);
-
-    for(int i = 0; i < n; i++) {
-
-        if(current < p[i].at)
-            current = p[i].at;
-
-        current += p[i].bt;
-
-        printf("\t%d", current);
-    }
-
-    printf("\n");
-
-    // Process Table
     printf("\nPID\tAT\tBT\tCT\tWT\tTAT\n");
 
     for(int i = 0; i < n; i++) {
-
         printf("P%d\t%d\t%d\t%d\t%d\t%d\n",
                p[i].pid,
                p[i].at,
