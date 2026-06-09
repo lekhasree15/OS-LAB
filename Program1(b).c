@@ -14,11 +14,15 @@ int main() {
 
     for(int i = 0; i < n; i++) {
         p[i].pid = i + 1;
+
         printf("\nProcess %d\n", i + 1);
+
         printf("Arrival Time: ");
         scanf("%d", &p[i].at);
+
         printf("Burst Time: ");
         scanf("%d", &p[i].bt);
+
         p[i].rt = p[i].bt;
         p[i].completed = 0;
     }
@@ -34,7 +38,12 @@ int main() {
     switch(choice) {
 
         case 1:
+
+            printf("\nGantt Chart:\n");
+            printf("0 ");
+
             while(completed < n) {
+
                 int idx = -1;
                 int min_bt = 9999;
 
@@ -48,7 +57,13 @@ int main() {
                 }
 
                 if(idx != -1) {
+
+                    printf("| P%d ", p[idx].pid);
+
                     time += p[idx].bt;
+
+                    printf("%d ", time);
+
                     p[idx].ct = time;
                     p[idx].tat = p[idx].ct - p[idx].at;
                     p[idx].wt = p[idx].tat - p[idx].bt;
@@ -58,14 +73,22 @@ int main() {
 
                     total_wt += p[idx].wt;
                     total_tat += p[idx].tat;
-                } else {
+                }
+                else {
                     time++;
                 }
             }
+
+            printf("|\n");
             break;
 
         case 2:
+
+            printf("\nGantt Chart:\n");
+            printf("0 ");
+
             while(completed < n) {
+
                 int idx = -1;
                 int min_rt = 9999;
 
@@ -79,22 +102,32 @@ int main() {
                 }
 
                 if(idx != -1) {
+
+                    printf("| P%d ", p[idx].pid);
+
                     p[idx].rt--;
                     time++;
 
+                    printf("%d ", time);
+
                     if(p[idx].rt == 0) {
+
                         p[idx].ct = time;
                         p[idx].tat = p[idx].ct - p[idx].at;
                         p[idx].wt = p[idx].tat - p[idx].bt;
 
                         completed++;
+
                         total_wt += p[idx].wt;
                         total_tat += p[idx].tat;
                     }
-                } else {
+                }
+                else {
                     time++;
                 }
             }
+
+            printf("|\n");
             break;
 
         default:
@@ -102,15 +135,20 @@ int main() {
             return 0;
     }
 
-    printf("\nPID\tAT\tBT\tCT\tWT\tTAT\n");
+    printf("\n\nPID\tAT\tBT\tCT\tWT\tTAT\n");
+
     for(int i = 0; i < n; i++) {
         printf("P%d\t%d\t%d\t%d\t%d\t%d\n",
-               p[i].pid, p[i].at, p[i].bt,
-               p[i].ct, p[i].wt, p[i].tat);
+               p[i].pid,
+               p[i].at,
+               p[i].bt,
+               p[i].ct,
+               p[i].wt,
+               p[i].tat);
     }
 
-    printf("\nAverage Waiting Time = %.2f", total_wt/n);
-    printf("\nAverage Turnaround Time = %.2f\n", total_tat/n);
+    printf("\nAverage Waiting Time = %.2f", total_wt / n);
+    printf("\nAverage Turnaround Time = %.2f\n", total_tat / n);
 
     return 0;
 }
